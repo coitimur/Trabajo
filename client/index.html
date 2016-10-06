@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en" ng-app="phonecatApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Google Phone Gallery</title>
+	<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
+    <link rel="stylesheet" href="assets/css/app.css" />
+	<link rel="stylesheet" href="assets/css/app.animations.css" />
+	<style>
+		
+	</style>
+    <script src="bower_components/jquery/dist/jquery.js"></script>
+    <script src="bower_components/angular/angular.js"></script>
+	<script src="bower_components/angular-animate/angular-animate.js"></script>
+	<script src="bower_components/angular-route/angular-route.js"></script>
+	<script src="bower_components/angular-resource/angular-resource.js"></script>
+    <script>
+		//---------------------------------------------------------//
+		// Define the 'phonecatApp' module
+	    //---------------------------------------------------------//
+		angular.module('phonecatApp', ['ngAnimate','ngRoute','core.filters.checkmark','core.factories.phone','phoneDetail','phoneList','animations','phoneForm'])
+		.config(['$locationProvider' ,'$routeProvider',
+			function config($locationProvider, $routeProvider) {
+			  $locationProvider.hashPrefix('!');
+
+			  $routeProvider.
+				when('/phones', {
+				  template: '<phone-list></phone-list>'
+				}).
+				when('/phones/:phoneId', {
+				  template: '<phone-detail></phone-detail>'
+				}).
+				when('/phonesform/:phoneId', {
+				  template: '<phone-form></phone-form>'
+				}).
+				otherwise('/phones');
+			}
+		  ])
+
+		//---------------------------------------------------------//
+		// Define the `phoneList` module
+		//---------------------------------------------------------//
+		angular.module('phoneList', ['core.factories.phone'])
+		.component('phoneList', {
+			templateUrl: 'phone-list.template.html',
+			controller: function PhoneListController(Phone) {
+			  var self = this;
+			  self.orderProp = 'age';
+
+			  /*$http.get('api/phones').then(function(response) {
+				self.phones = response.data;
+			  });
+			  */
+			  self.phones = Phone.getAll({}, function(phones) {
+				  //self.setImage(phone.images[0].img);
+				}); 
+			}
+		})
+		  
+		//-------------------------------------------------------//
+		// Define the `phoneForm` module
+		//-------------------------------------------------------//
+		angular.module('phoneForm', ['core.factories.phone'])
+		.component('phoneForm', {
+			templateUrl: 'phone-form.template.html',
+			controller:  function PhoneFormController(Phone, $routeParams) {
+				var self = this;
+
+				self.setImage = function setImage(imageUrl) {
+				  self.mainImageUrl = imageUrl;
+				};
+
+				self.phone = Phone.get({'id': $routeParams.phoneId}, function(phone) {
+				  self.setImage(phone.images[0].img);
+				}); 
+			  }
+			
+		});
+		
+		//-------------------------------------------------------//
+		// Define the `phoneDetail` module
+		//-------------------------------------------------------//
+		angular.module('phoneDetail', ['core.factories.phone'])
+		.component('phoneDetail', {
+			templateUrl: 'phone-detail.template.html',
+			controller:  function PhoneDetailController(Phone, $routeParams) {
+				var self = this;
+
+				self.setImage = function setImage(imageUrl) {
+				  self.mainImageUrl = imageUrl;
+				};
+
+				self.phone = Phone.get({'id': $routeParams.phoneId}, function(phone) {
+				  self.setImage(phone.images[0].img);
+				}); 
+			  }
+			
+		});
+		  
+		//-------------------------------------------------------//
+		// Define the `core.phone` module
+		//-------------------------------------------------------//
+		angular.module('core.factories.phone', ['ngResource'])
+		.factory('Phone', function($resource) {
+			  return $resource('api/phones/:id', {}, {
+				getAll: {
+				  method: 'GET',
+				  params: {},
+				  isArray: true
+				},
+				get: {
+				  method: 'GET',
+				  params: {},
+				  isArray: false
+				}
+			  });
+			}
+		);
+		
+
+		//---------------------------------------------------------//
+		// Define the `checkmark` module
+		//---------------------------------------------------------//
+		angular.module('core.filters.checkmark', [])
+		.filter('checkmark', function() {
+			return function(input) {
+			  return input ? '\u2713' : '\u2718';
+			};
+		});
+		
+		//---------------------------------------------------------//
+		// Define the `animations` module
+		//---------------------------------------------------------//
+		angular.module('animations',[])
+		.animation('.phone', function phoneAnimationFactory() {
+			return {
+			  addClass: animateIn,
+			  removeClass: animateOut
+			};
+
+			function animateIn(element, className, done) {
+			  if (className !== 'selected') return;
+
+			  element.css({
+				display: 'block',
+				position: 'absolute',
+				top: 500,
+				left: 0
+			  }).animate({
+				top: 0
+			  }, done);
+
+			  return function animateInEnd(wasCanceled) {
+				if (wasCanceled) element.stop();
+			  };
+			}
+
+			function animateOut(element, className, done) {
+			  if (className !== 'selected') return;
+
+			  element.css({
+				position: 'absolute',
+				top: 0,
+				left: 0
+			  }).animate({
+				top: -500
+			  }, done);
+
+			  return function animateOutEnd(wasCanceled) {
+				if (wasCanceled) element.stop();
+			  };
+			}
+		  });
+		
+
+</script>
+	
+	
+	
+  </head>
+  <body>
+	<nav class="navbar navbar-inverse">
+		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="">PhoneCat</a></li>
+				<li class="active"><a href="#!/phones">Phones</a></li>
+			</ul>
+		</div>
+			
+	</nav>
+
+    <!-- to render partials -->
+    <div class="view-container">
+      <div ng-view class="view-frame"></div>
+    </div>
+	
+	
+	<!---------------------------------------------->
+	<!-- templates                                -->
+	<!---------------------------------------------->
+	
+	<!-- template phone-list -->
+	<script type="text/ng-template" id="phone-list.template.html">
+		<div class="container-fluid">
+		  <div class="row">
+			<div class="col-md-2">
+			  <!--Sidebar content-->
+
+			  <p>
+				Search:
+				<input ng-model="$ctrl.query" />
+			  </p>
+
+			  <p>
+				Sort by:
+				<select ng-model="$ctrl.orderProp">
+				  <option value="name">Alphabetical</option>
+				  <option value="age">Newest</option>
+				</select>
+			  </p>
+
+			</div>
+			<div class="col-md-10">
+			  <!--Body content-->
+
+			  <ul class="phones">
+				<li ng-repeat="phone in $ctrl.phones | filter:$ctrl.query | orderBy:$ctrl.orderProp" class="thumbnail phone-list-item">
+				  <a href="#!/phones/{{phone.id}}" class="thumb">
+					<img ng-src="assets/{{phone.images}}" alt="{{phone.name}}" />
+				  </a>
+				  <a href="#!/phones/{{phone.id}}">{{phone.name}}</a>
+				  <p>{{phone.id}}-{{phone.description | limitTo:150}} ...</p>
+				</li>
+			  </ul>
+
+			</div>
+		  </div>
+		</div>
+
+	</script>
+	
+	<!-- template phone-details -->
+	<script type="text/ng-template" id="phone-detail.template.html">
+		<div class="phone-images">
+			<img ng-src="assets/{{image.img}}" class="phone" ng-class="{selected: image.img === $ctrl.mainImageUrl}" ng-repeat="image in $ctrl.phone.images" />
+		</div>
+
+		<h1>{{$ctrl.phone.name}}</h1>
+
+		<p>{{$ctrl.phone.description}}</p>
+
+		<ul class="phone-thumbs">
+		  <li ng-repeat="image in $ctrl.phone.images">
+			<img ng-src="assets/{{image.img}}" ng-click="$ctrl.setImage(image.img)" />
+		  </li>
+		</ul>
+
+		<ul class="specs">
+		  <li>
+			<span>Availability and Networks</span>
+			<dl>
+			  <dt>Availability</dt>
+			  <dd>{{$ctrl.phone.availability}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Battery</span>
+			<dl>
+			  <dt>Type</dt>
+			  <dd>{{$ctrl.phone.battery_type}}</dd>
+			  <dt>Talk Time</dt>
+			  <dd>{{$ctrl.phone.battery_talkTime}}</dd>
+			  <dt>Standby time (max)</dt>
+			  <dd>{{$ctrl.phone.battery_standbyTime}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Storage and Memory</span>
+			<dl>
+			  <dt>RAM</dt>
+			  <dd>{{$ctrl.phone.storage_ram}}</dd>
+			  <dt>Internal Storage</dt>
+			  <dd>{{$ctrl.phone.storage_flash}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Connectivity</span>
+			<dl>
+			  <dt>Network Support</dt>
+			  <dd>{{$ctrl.phone.connectivity_cell}}</dd>
+			  <dt>WiFi</dt>
+			  <dd>{{$ctrl.phone.connectivity_wifi}}</dd>
+			  <dt>Bluetooth</dt>
+			  <dd>{{$ctrl.phone.connectivity_bluetooth}}</dd>
+			  <dt>Infrared</dt>
+			  <dd>{{$ctrl.phone.connectivity_infrared | checkmark}}</dd>
+			  <dt>GPS</dt>
+			  <dd>{{$ctrl.phone.connectivity_gps | checkmark}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Android</span>
+			<dl>
+			  <dt>OS Version</dt>
+			  <dd>{{$ctrl.phone.android_os}}</dd>
+			  <dt>UI</dt>
+			  <dd>{{$ctrl.phone.android_ui}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Size and Weight</span>
+			<dl>
+			  <dt>Dimensions</dt>
+			  <dd >{{$ctrl.phone.sizeAndWeight_dimensions}}</dd>
+			  <dt>Weight</dt>
+			  <dd>{{$ctrl.phone.sizeAndWeight_weight}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Display</span>
+			<dl>
+			  <dt>Screen size</dt>
+			  <dd>{{$ctrl.phone.display_screenSize}}</dd>
+			  <dt>Screen resolution</dt>
+			  <dd>{{$ctrl.phone.display_screenResolution}}</dd>
+			  <dt>Touch screen</dt>
+			  <dd>{{$ctrl.phone.display_touchScreen | checkmark}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Hardware</span>
+			<dl>
+			  <dt>CPU</dt>
+			  <dd>{{$ctrl.phone.hardware_cpu}}</dd>
+			  <dt>USB</dt>
+			  <dd>{{$ctrl.phone.hardware_usb}}</dd>
+			  <dt>Audio / headphone jack</dt>
+			  <dd>{{$ctrl.phone.hardware_audioJack}}</dd>
+			  <dt>FM Radio</dt>
+			  <dd>{{$ctrl.phone.hardware_fmRadio | checkmark}}</dd>
+			  <dt>Accelerometer</dt>
+			  <dd>{{$ctrl.phone.hardware_accelerometer | checkmark}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Camera</span>
+			<dl>
+			  <dt>Primary</dt>
+			  <dd>{{$ctrl.phone.camera_primary}}</dd>
+			  <dt>Features</dt>
+			  <dd>{{$ctrl.phone.camera_features}}</dd>
+			</dl>
+		  </li>
+		  <li>
+			<span>Additional Features</span>
+			<dd>{{$ctrl.phone.additionalFeatures}}</dd>
+		  </li>
+		</ul>
+
+	</script>
+	
+	<!-- template phone form -->
+	<script type="text/ng-template" id="phone-form.template.html">
+	  <div class="container-fluid">
+		 <form>
+		    <div class="form-group">
+				<label for="name">Name</label>
+				<input type="text" ng-model="$ctrl.phone.name" class="form-control" id="name" >
+			</div>
+			<div class="form-group">
+				<label for="additionalfeatures">Aditional Features</label>
+				<input type="text" ng-model="$ctrl.phone.additionalfeatures" class="form-control" id="additionalfeatures">
+			</div>
+			<div class="form-group">
+				<label for="android_os">Android OS</label>
+				<input type="text"  ng-model="$ctrl.phone.android_os" class="form-control" id="android_os" >
+			</div>
+			 
+			<div class="form-group">
+				<label for="android_ui">Android UI</label>
+				<input type="text" ng-model="$ctrl.phone.android_ui" class="form-control" id="android_ui" >
+			</div> 
+
+			<div class="form-group">
+				<label for="availability">Availability</label>
+				<input type="text" ng-model="$ctrl.phone.availability" class="form-control" id="availability" >
+			</div>
+			
+			<div class="form-group">
+				<label for="battery_standbytime">Battery Standbytime</label>
+				<input type="text" ng-model="$ctrl.phone.battery_standbytime" class="form-control" id=""battery_standbytime"" >
+			</div>
+			
+			<div class="form-group">
+				<label for="battery_talktime">Battery Talktime</label>
+				<input type="text" ng-model="$ctrl.phone.battery_talktime" class="form-control" id="battery_talktime" >
+			</div>
+			
+			<div class="form-group">
+				<label for="battery_type">Battery Type</label>
+				<input type="text" ng-model="$ctrl.phone.battery_type" class="form-control" id="battery_type" >
+			</div>
+			
+			<div class="form-group">
+				<label for="camera_features">Camera Features</label>
+				<input type="text" ng-model="$ctrl.phone.camera_features" class="form-control" id="camera_features" >
+			</div>
+			
+			<div class="form-group">
+				<label for="camera_features_primary">Camera Features Primary</label>
+				<input type="text" ng-model="$ctrl.phone.camera_features_primary" class="form-control" id="camera_features_primary" >
+			</div>
+			
+			<div class="form-group">
+				<label for="connectivity_bluetooth">Connectivity Bluetooth</label>
+				<input type="text" ng-model="$ctrl.phone.connectivity_bluetooth" class="form-control" id="connectivity_bluetooth" >
+			</div>
+			
+			
+			<div class="form-group">
+				<label for="connectivity_cell">Connectivity Cell</label>
+				<input type="text" ng-model="$ctrl.phone.connectivity_cell" class="form-control" id="connectivity_cell" >
+			</div>
+			
+			<div class="form-group">
+				<label for="connectivity_cell">Connectivity Cell</label>
+				<input type="text" ng-model="$ctrl.phone.connectivity_cell" class="form-control" id="connectivity_cell" >
+			</div>
+			
+			<div class="form-check">
+				<label class="form-check-label">
+				  <input type="checkbox" ng-model="$ctrl.phone.connectivity_gps" class="form-check-input">
+				  Connectivity Gps
+				</label>
+			</div>
+			
+			<div class="form-check">
+				<label class="form-check-label">
+				  <input type="checkbox" ng-model="$ctrl.phone.connectivity_infrared" class="form-check-input">
+				  Connectivity Infrared
+				</label>
+			</div>
+			
+			<div class="form-group">
+				<label for="description">Description</label>
+				<textarea class="form-control" ng-model="$ctrl.phone.description" id="description" rows="3"></textarea>
+			</div>
+			
+			<div class="form-group">
+				<label for="connectivity_wifi">Connectivity Wifi</label>
+				<input type="text" ng-model="$ctrl.phone.connectivity_wifi" class="form-control" id="connectivity_wifi" >
+			</div>
+			
+			<div class="form-group">
+				<label for="display_screenresolution">Display Screen Resolution</label>
+				<input type="text" ng-model="$ctrl.phone.display_screenresolution" class="form-control" id="display_screenresolution" >
+			</div>
+			
+			<div class="form-group">
+				<label for="display_screensize">Display Screen Resolution</label>
+				<input type="text" ng-model="$ctrl.phone.display_screensize" class="form-control" id="display_screensize" >
+			</div>
+			
+			<div class="form-check">
+				<label class="form-check-label">
+				  <input type="checkbox" ng-model="$ctrl.phone.display_touchscreen" class="form-check-input">
+				  Display Touch Screen
+				</label>
+			</div>
+			
+			<div class="form-check">
+				<label class="form-check-label">
+				  <input type="checkbox" ng-model="$ctrl.phone.hardware_accelerometer" class="form-check-input">
+				  Hardware Accelerometer
+				</label>
+			</div>
+			
+			
+			
+			<div class="form-group">
+				<label for="hardware_audiojack">Hardware Audio Jack</label>
+				<input type="text" ng-model="$ctrl.phone.hardware_audiojack" class="form-control" id="hardware_audiojack" >
+			</div>
+			
+			<div class="form-group">
+				<label for="hardware_cpu">Hardware Cpu</label>
+				<input type="text" ng-model="$ctrl.phone.hardware_cpu" class="form-control" id="hardware_cpu" >
+			</div>
+			
+			<div class="form-group">
+				<label for="hardware_cpu">Hardware Cpu</label>
+				<input type="text" ng-model="$ctrl.phone.hardware_cpu" class="form-control" id="hardware_cpu" >
+			</div>
+			
+			<div class="form-check">
+				<label class="form-check-label">
+				  <input type="checkbox" ng-model="$ctrl.phone.hardware_fmradio" class="form-check-input">
+				  Hardware FM Radio
+				</label>
+			</div>
+			
+			<div class="form-check">
+				<label class="form-check-label">
+				  <input type="checkbox" ng-model="$ctrl.phone.hardware_physicalkeyboard" class="form-check-input">
+				  Hardware Physical Keyboard
+				</label>
+			</div>
+			
+			<div class="form-group">
+				<label for="hardware_usb">Hardware Cpu</label>
+				<input type="text" ng-model="$ctrl.phone.hardware_usb" class="form-control" id="hardware_usb" >
+			</div>
+			
+			<div class="form-group">
+				<label for="sizeandweight_dimensions">Size</label>
+				<input type="text" ng-model="$ctrl.phone.sizeandweight_dimensions" class="form-control" id="sizeandweight_dimensions" >
+			</div>
+			
+			<div class="form-group">
+				<label for="sizeandweight_weight">Weight</label>
+				<input type="text" ng-model="$ctrl.phone.sizeandweight_weight" class="form-control" id="sizeandweight_weight" >
+			</div>
+			
+			<div class="form-group">
+				<label for="storage_flash">Storage Flash</label>
+				<input type="text" ng-model="$ctrl.phone.storage_flash" class="form-control" id="storage_flash" >
+			</div>
+			
+			<div class="form-group">
+				<label for="storage_ram">Storage Ram</label>
+				<input type="text" ng-model="$ctrl.phone.storage_ram" class="form-control" id="storage_ram" >
+			</div>
+			
+			
+			 
+			 
+			 
+			  <div class="form-group">
+				<label for="exampleInputFile">File input</label>
+				<input type="file" class="form-control-file" id="exampleInputFile" aria-describedby="fileHelp">
+				<small id="fileHelp" class="form-text text-muted">This is some placeholder block-level help text for the above input. It's a bit lighter and easily wraps to a new line.</small>
+			  </div>
+			  <fieldset class="form-group">
+				<legend>Radio buttons</legend>
+				<div class="form-check">
+				  <label class="form-check-label">
+					<input type="radio" class="form-check-input" name="optionsRadios" id="optionsRadios1" value="option1" checked>
+					Option one is this and that&mdash;be sure to include why it's great
+				  </label>
+				</div>
+				<div class="form-check">
+				<label class="form-check-label">
+					<input type="radio" class="form-check-input" name="optionsRadios" id="optionsRadios2" value="option2">
+					Option two can be something else and selecting it will deselect option one
+				  </label>
+				</div>
+				<div class="form-check disabled">
+				<label class="form-check-label">
+					<input type="radio" class="form-check-input" name="optionsRadios" id="optionsRadios3" value="option3" disabled>
+					Option three is disabled
+				  </label>
+				</div>
+			  </fieldset>
+			  <div class="form-check">
+				<label class="form-check-label">
+				  <input type="checkbox" class="form-check-input">
+				  Check me out
+				</label>
+			  </div>
+			  <button type="submit" class="btn btn-primary">Submit</button>
+			</form>
+	    </div>
+     </script>		
+
+  </body>
+</html>
