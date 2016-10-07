@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+</head>
+<body ng-app="app">
+    <div ng-controller="mainController">
+        <form name="myForm" novalidate>
+            User Name:<input type="text" name="uname" required ng-model="user.userName"><br />
+            Password:<input type="password" name="password" required ng-model="user.password"><br />
+            <button ng-disabled="!myForm.$valid" type="submit">save</button>
+        </form>
+        <pre>myForm.$valid:<b>{{myForm.$valid}}</b></pre>
+        <pre>myForm.uname.$dirty:<b>{{myForm.uname.$dirty}}</b></pre>
+        <pre>myForm.uname.$pristine:<b>{{myForm.uname.$pristine}}</b></pre>
+        <pre>myForm.password.$error.required:<b>{{myForm.password.$error.required}}</b></pre>
+        <pre>myForm.uname.$error.required:<b>{{myForm.uname.$error.required}}</b></pre>
+    </div>
+	
+	<pre>parent:{{form_parent.center_name.$invalid }} </pre>
+	<pre>child:{{child}} </pre>
+<script>
+    var app = angular.module("app", []);
+    app.controller('mainController', function ($scope) {
+        $scope.items = [{ name: 'A' }, { name: 'B' }, { name: '' }]
+		$scope.a=myForm;
+		
+		$scope.$watch("myForm.uname.$invalid", function(newValue, oldValue) {
+			if (newValue === oldValue) {
+			  return;
+			}
+		 
+			console.log("Estado myForm.uname.$invalid:"+newValue);
+		});
+		
+    });
+</script>
+</body>
+</html>

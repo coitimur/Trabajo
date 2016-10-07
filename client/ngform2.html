@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+</head>
+<body ng-app="app">
+    <div ng-controller="mainController">
+	       <form name="myFormParent">
+			<ng-form name="myForm" novalidate>
+				<label>User Name</label>
+				<input type="text" required ng-model="uName" name="name" />
+				<br />
+				<label>Email</label>
+				<input type="email" required ng-model="email" name="age" />
+				<br />
+				<input type="button" ng-disabled="!myForm.$dirty" ng-click="click()" value="click" />
+				
+				<pre>INNER myForm.$dirty:{{myForm.$dirty}}</pre>
+			</ng-form>
+			</form>
+		<pre>OUTER myForm.$dirty:{{myForm.$dirty}}</pre>
+    </div>
+    <script>
+    var app = angular.module("app", []);
+    app.controller('mainController', ['$scope', function ($scope) {
+        $scope.uName = "LearnIt";
+        $scope.email = "visrosoftware@gmail.com";
+		//var a=$scope.myForm;
+		//var b=myForm;
+		var c=myFormParent.myForm;
+    }]);
+</script>
+</body>
+</html>
